@@ -1,0 +1,67 @@
+/*
+ 2016-3-18 20:11 
+ Nuaa Ccst eastern  Lab104
+ problem : http://www.spoj.com/problems/GSS1
+ descrpition:
+   You are given a sequence A[1], A[2], ..., A[N] . ( |A[i]| ≤ 15007 , 1 ≤ N ≤ 50000 ). A query is defined as follows: 
+Query(x,y) = Max { a[i]+a[i+1]+...+a[j] ; x ≤ i ≤ j ≤ y }. 
+Given M queries, your program must output the results of these queries.
+
+I think SegmentTree uses the thought of Divide and Conquer, i get the idea from this problem .
+Segmenttree is useful for those segment prob.
+For more knowledge , you can go to http://codeforces.com/blog/entry/15729.
+*/
+
+#include <cstdio>
+#include <cstring>
+
+
+struct node {
+	int maxs,ls,rs,s ;
+};
+
+node T[400000];
+int a[60000];
+int MAX(int a,int b){return a>b?a:b;}
+node max(node a,node b) {
+	node c ;
+	c.s = a.s + b.s ; 
+	c.rs=  MAX(b.rs, a.rs+b.s);
+	c.ls= MAX(a.ls, a.s+b.ls);
+	c.maxs = MAX(a.maxs, b.maxs);
+	c.maxs = MAX(c.maxs,MAX( c.rs, c.ls));
+	c.maxs = MAX(c.maxs, a.rs+b.ls);
+	c.maxs = MAX(c.maxs,c.s);
+	return c; 
+}
+
+void build(int l,int r,int p){
+	if (l==r) {
+		T[p].maxs = T[p].ls = T[p].rs = T[p].s = a[l] ;
+		return ;
+	}
+	int mid =  (l+r)>>1 ;
+	build(l,mid,p<<1);
+	build(mid+1,r,p<<1|1);
+	T[p] = max(T[p<<1], T[p<<1|1]); 
+}
+node query(int l,int r,int x,int y,int p) {
+	if (x<=l && r<=y) return T[p] ;
+	int mid= (l+r) >> 1;
+	if (y<=mid) return query(l,mid,x,y,p<<1);
+	if (x>mid) return query(mid+1,r,x,y,p<<1|1);
+	return max(query(l,mid,x,mid,p<<1), query(mid+1,r,mid+1,y,p<<1|1)) ;
+}
+int main()
+{
+	int n, m; 
+	scanf("%d",&n);
+	for (int i=1; i<=n; ++i) scanf("%d",a+i);
+	build(1,n,1);
+	scanf("%d",&m);
+	for (int i=1; i<=m;++i) {
+		int x,y; 
+		scanf("%d%d",&x,&y);
+		printf("%d\n",query(1,n,x,y,1).maxs);
+	}
+}
