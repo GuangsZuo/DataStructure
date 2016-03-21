@@ -1,0 +1,86 @@
+/*
+ 2016-3-19 17:31 
+ Nuaa Ccst eastern  Lab104
+ problem : http://www.spoj.com/problems/DQUERY/
+ descrpition:
+   Given a sequence of n numbers a1, a2, ..., an and a number of d-queries. 
+   A d-query is a pair (i, j) (1 ≤ i ≤ j ≤ n). For each d-query (i, j),
+   you have to return the number of distinct elements in the subsequence ai, ai+1, ..., aj.
+
+
+   an idea catchs me that Mo's algorithm mabey can solve this problem which cost O((n+q)*sqrt(n))
+
+
+ 2016-3-21 14:27 
+
+ I intended to use the segmentTree to solve this problem, but i have no idea about how to
+ compute the count of distinct numbers fast.
+ sqrt decomposition
+ Suppose we have an array a1, a2, ..., an and . We partition this array into k pieces each containing k elements of a.
+Doing this, we can do a lot of things in . Usually we use them in the problems with modify and ask queries.
+which k is sqrt(n) . 
+*/
+
+#include <cstdio>
+#include <algorithm>
+#include <cmath> 
+using namespace std;
+
+int n,m,k;
+struct Qnode  {
+	int l,r,pos; 
+};
+
+int comp(const Qnode& a, const Qnode& b) {
+	if (a.l/ k==b.l / k) return a.r < b.r; 
+	return a.l/k<b.l/k;
+}
+
+Qnode query[200006] ; 
+int a[30006];
+int cnt[1000007] ; 
+int ans[200006];
+
+int main()
+{
+	scanf("%d",&n);
+	for (int i=1; i<=n; ++i) scanf("%d",a+i);
+	scanf("%d",&m);
+	for (int i=1; i<=m; ++i) {
+		scanf("%d %d",&query[i].l , &query[i].r);
+		query[i].pos = i ; 
+	}
+	
+	k  = sqrt(n); 
+	sort(query+1,query+m+1,comp);
+
+
+	int sum=0, head= query[1].l,tail=query[1].r ; 
+	for (int i=head ; i<=tail; ++i) {
+		++cnt[a[i]];
+		if (cnt[a[i]]==1) ++sum ; 
+	}
+	ans[query[1].pos] = sum ; 
+	for (int i=2; i<=m; ++i) {
+		int l = query[i].l , r= query[i].r ;
+		while (head>l) {
+			++cnt[a[--head]];
+			if (cnt[a[head]]==1) ++sum; 
+		}
+		while (head<l) {
+			if (cnt[a[head]]==1) --sum ;
+			--cnt[a[head++]] ; 
+		}
+		while (tail>r) {
+			if (cnt[a[tail]]==1) --sum; 
+			--cnt[a[tail--]]; 
+		}
+		while (tail<r) {
+			++cnt[a[++tail]];
+			if (cnt[a[tail]]==1) ++sum ; 
+		}
+		ans[query[i].pos] = sum ; 
+	}
+
+	for (int i=1; i<=m; ++i) printf("%d\n",ans[i]);
+}
