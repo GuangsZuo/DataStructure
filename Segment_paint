@@ -1,0 +1,119 @@
+/*
+	2016-3-21- 17:25
+
+	Nuaa Ccst eastern Lab104
+
+	http://www.spoj.com/problems/POSTERS/
+
+description
+
+	A parliamentary election was being held in Byteland. Its enterprising and orderly citizens decided to limit the entire election campaign to a single dedicated wall, so as not to ruin the panorama with countless posters and billboards. Every politician was allowed to hang exactly one poster on the wall. All posters extend from top to bottom, but are hung at different points of the wall, and may be of different width. The wall is divided horizontally into sections, and a poster completely occupies two or more adjacent sections.
+
+With time, some of the posters were covered (partially or completely) by those of other politicians. Knowing the location of all the posters and the order in which they were hung, determine how many posters have at least one visible section in the end.
+
+Input
+
+The input begins with the integer t, the number of test cases. Then t test cases follow.
+
+Each test case begins with a line containing integer n - the number of posters (1<=n<=40000). Then n lines follow, the i-th (1<=i<=n) containing exactly two integers li ri, denoting the numbers of the leftmost and rightmost sections covered by the i-th poster (1<=li< ri<= 107). The input order corresponds to the order of hanging posters.
+
+Output
+
+For each test case output a line containing one integer - the number of posters with visible sections
+
+a classical SegmentTree problem with lazy Tag . 
+*/
+
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+
+using namespace std; 
+
+struct node {
+	int col, lazy; 
+};
+
+node T[400000];
+
+struct rec {
+	int x, flag, pos;
+};
+
+rec a[90000]; 
+
+int cmp(const rec& a, const rec& b) {
+	return a.x < b.x ; 
+}
+
+int q[2][40005],col[40005]; 
+
+
+void Down(int x) {
+	T[x<<1].col = T[x<<1|1].col = T[x].col;
+	T[x<<1].lazy = T[x<<1|1].lazy = 1 ;
+	T[x].lazy= 0; 
+}
+
+void update(int l,int r,int x,int y,int p,int _col) {
+	if (x>r || y<l) return ; 
+	if (x<=l && r<=y) {
+		T[p].col = _col;
+		T[p].lazy = 1 ; 
+		return ; 
+	}
+	if(T[p].lazy) Down(p);
+	int mid = l+r >> 1; 
+	update(l,mid,x,y,p<<1, _col);
+	update(mid+1,r,x,y,p<<1|1,_col);
+	if (T[p<<1].col != T[p<<1|1].col) T[p].col = 0;
+	else T[p].col = T[p<<1].col; 
+}
+
+int query(int x, int l,int r,int p){
+	if (x>=l && x<=r &&T[p].col) return T[p].col;  
+	if (l==r) return T[p].col;
+	if (T[p].lazy) Down(p);
+	int mid = l+r>>1; 
+	if (x<=mid) return query(x,l,mid,p<<1);
+	return query(x,mid+1,r,p<<1|1); 
+}
+
+int main()
+{
+	int t,n;
+	scanf("%d",&t);
+	while (t--) {
+		scanf("%d",&n);
+		int tot =0 ; 
+		for (int i=1; i<=n; ++i) {
+			int x,y; 
+			scanf("%d%d",&x,&y);
+			a[++tot].x = x; a[tot].flag = 0 ; a[tot].pos = i;
+			a[++tot].x = y; a[tot].flag = 1 ; a[tot].pos = i;
+		}
+		sort(a+1,a+2*n+1,cmp);
+		int cnt = 0; 
+		for (int i=1; i<=2*n;++i) {
+			if (a[i].x != a[i-1].x) q[a[i].flag][a[i].pos] = ++cnt; 
+			else q[a[i].flag][a[i].pos] = cnt; 
+		}
+
+		memset(T,0,sizeof(T));
+		for (int i=1; i<=n; ++i) 
+		update(1,cnt,q[0][i],q[1][i],1,i);
+
+		int ans = 0 ;
+		memset(col,0,sizeof(col)); 
+		for (int i=1; i<=cnt; ++i) {
+			int k = query(i,1,cnt,1) ;
+			if (k && !col[k]) {
+				col[k] = 1;
+				++ ans; 
+			}
+		}
+
+		printf("%d\n",ans);
+	}
+}
+
