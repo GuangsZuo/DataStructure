@@ -1,0 +1,99 @@
+/*
+	2016-3-22 16:06
+
+	Nuaa Ccst eastern Lab104
+
+	problem http://www.spoj.com/problems/MKTHNUM/
+
+	description
+
+	given an array a[1 ... n] of different integer numbers, your program must answer a series of questions Q(i, j, k) in the form: "What would be the k-th number in a[i ... j] segment, if this segment was sorted?"
+	
+	article about persitent segment tree
+	http://blog.anudeep2011.com/persistent-segment-trees-explained-with-spoj-problems/
+*/
+#include <cstdio>
+#include <algorithm>
+
+struct node {
+	int x, pos; 
+};
+
+int origin[100006]; 
+node a[100006]; 
+
+int cmp(const node& a , const node & b) {
+	return a.x < b.x ; 
+}
+
+// persitent segment tree
+
+int T[2400006],L[2400006],R[2400006],root[100006],b[100006],next,cnt ; 
+
+void build(int l,int r, int&id) {
+	id = ++next;
+	T[id] =0 ; 
+	if (l==r) return ; 
+	int mid = l+r >>1 ; 
+ 	build(l,mid, L[id]);
+ 	build(mid+1,r,R[id]); 
+}
+
+void update(int l,int r,int k,int p,int& id ) {
+	id = ++next;
+	if (l==r)  {
+		T[id]+=1;
+		return ;
+	}
+	int mid = l+r>>1;
+	L[id] = L[p] , R[id] = R[p]; 
+	if (k<=mid)  update(l,mid,k,L[p],L[id]);
+	else update(mid+1,r,k,R[p],R[id]); 
+	T[id] = T[L[id]] + T[R[id]]; 
+}
+int sum(int x,int y,int l,int r,int id) {
+	if (y<l || x>r || x>y) return 0;
+	if (x<=l && r<=y) return T[id] ;
+	int mid = l+r>>1;
+	return sum(x,y,l,mid,L[id])+sum(x,y,mid+1,r,R[id]);
+}
+int query(int l,int r,int k) {
+	int L = 1, R = 100004, mid;
+	while (L<R-1) {
+		mid = L+R>>1;
+		//printf("%d %d %d %d %d\n",L,R,mid,sum(1,mid-1,1,cnt,root[r]),sum(1,mid-1,1,cnt,root[l-1]));
+		if (sum(1,mid-1,1,cnt,root[r]) - sum(1,mid-1,1,cnt,root[l-1]) <=k-1) L=mid; 
+		else R=mid; 
+	}
+	if ( sum(1,R-1,1,cnt,root[r]) - sum(1,R-1,1,cnt,root[l-1]) ==k-1) return R ; 
+	return L;
+}
+
+int main(){
+	int n,m ;
+	scanf("%d%d",&n,&m);
+	for (int i=1; i<=n; ++i) {
+		scanf("%d",&a[i].x) ;
+		a[i].pos = i ; 
+	}
+	std::sort(a+1,a+n+1,cmp); 
+
+	cnt =1 ;
+	for (int i=1; i<=n; ++i) {
+		int k = cnt; 
+		if (a[i].x != a[i-1].x) k = ++cnt;
+		origin[k] = a[i].x; 
+		b[a[i].pos] = k ; 
+	}
+
+	build(1,cnt,root[0]); 
+
+	for (int i=1; i<=n; ++i) 
+		update(1,cnt,b[i],root[i-1],root[i]); 
+
+	for (int i=1; i<=m; ++i) {
+		int l,r,k;
+		scanf("%d%d%d",&l,&r,&k);
+		printf("%d\n",origin[query(l,r,k)]); 
+	}
+}
